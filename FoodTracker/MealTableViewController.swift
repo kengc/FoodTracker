@@ -10,7 +10,7 @@ import UIKit
 
 class MealTableViewController: UITableViewController {
 
-    //MARK: Properties
+//MARK: Properties
     
     //an array of meal objects: var = mutable
     var meals = [Meal]()
@@ -28,7 +28,7 @@ class MealTableViewController: UITableViewController {
         // Dispose of any resources that can be recreated.
     }
 
-    // MARK: - Table view data source
+// MARK: - Table view data source
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
@@ -110,7 +110,27 @@ class MealTableViewController: UITableViewController {
         // Pass the selected object to the new view controller.
     }
     */
-    //MARK: Private Methods
+    
+//MARK: Actions
+    
+    
+    //IBAction makes this function visible in the iterface builder as a method option for drag and drop etc
+    @IBAction func unwindToMealList(sender: UIStoryboardSegue) {
+        
+        //This code uses the optional type cast operator (as?) to try to downcast the segue’s source view controller to a MealViewController instance. You need to downcast because sender.sourceViewController is of type UIViewController, but you need to work with a MealViewController.
+        //The operator returns an optional value, which will be nil if the downcast wasn’t possible. If the downcast succeeds, the code assigns the MealViewController instance to the local constant sourceViewController, and checks to see if the meal property on sourceViewController is nil. If the meal property is non-nil, the code assigns the value of that property to the local constant meal and executes the if statement.
+        
+        if let sourceViewController = sender.source as? MealViewController, let meal = sourceViewController.meal {
+            // Add a new meal.
+            let newIndexPath = IndexPath(row: meals.count, section: 0)
+            meals.append(meal)
+            tableView.insertRows(at: [newIndexPath], with: .automatic)
+            
+        }
+    }
+    
+    
+//MARK: Private Methods
     
     private func loadSampleMeals() {
         let photo1 = UIImage(named: "meal1")
