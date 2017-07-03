@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import os.log
 
 class MealTableViewController: UITableViewController {
 
@@ -18,9 +19,14 @@ class MealTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
+        // Use the edit button item provided by the table view controller.
+        //in otherwords ADD an edit (delete) button to the top left navi bar
+        navigationItem.leftBarButtonItem = editButtonItem
+        
         // Load the sample data.
         loadSampleMeals()
+
     }
 
     override func didReceiveMemoryWarning() {
@@ -65,14 +71,25 @@ class MealTableViewController: UITableViewController {
         return cell
     }
  
-
-    /*
+    // Override to support editing the table view.
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            // Delete the row from the data source
+            //This code removes the Meal object to be deleted from meals. The line after it, which is part of the template implementation, deletes the corresponding row from the table view.
+            meals.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .fade)
+        } else if editingStyle == .insert {
+            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+        }
+    }
+    
     // Override to support conditional editing of the table view.
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         // Return false if you do not want the specified item to be editable.
+            
         return true
     }
-    */
+ 
 
     /*
     // Override to support editing the table view.
@@ -101,15 +118,41 @@ class MealTableViewController: UITableViewController {
     }
     */
 
-    /*
-    // MARK: - Navigation
+
+// MARK: - Navigation
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
+        super.prepare(for: segue, sender: sender)
+        
+        
+        //The code below examines the segue’s identifier. If the identifier is nil, the nil-coalescing operator (??) replaces it with an empty string (""). This simplifies the switch statement’s logic, since you won’t need to deal with optionals inside the cases.
+        switch(segue.identifier ?? "") {
+            
+        case "AddItem":
+            os_log("Adding a new meal.", log: OSLog.default, type: .debug)
+            
+        case "ShowDetail":
+            guard let mealDetailViewController = segue.destination as? MealViewController else {
+                fatalError("Unexpected destination: \(segue.destination)")
+            }
+            
+            guard let selectedMealCell = sender as? MealTableViewCell else {
+                fatalError("Unexpected sender: \(sender)")
+            }
+            
+            guard let indexPath = tableView.indexPath(for: selectedMealCell) else {
+                fatalError("The selected cell is not being displayed by the table")
+            }
+            
+            let selectedMeal = meals[indexPath.row]
+            mealDetailViewController.meal = selectedMeal
+            
+        default:
+            fatalError("Unexpected Segue Identifier; \(segue.identifier)")
+        }
+   }
+ 
     
 //MARK: Actions
     
@@ -117,14 +160,28 @@ class MealTableViewController: UITableViewController {
     //IBAction makes this function visible in the iterface builder as a method option for drag and drop etc
     @IBAction func unwindToMealList(sender: UIStoryboardSegue) {
         
+        
         //This code uses the optional type cast operator (as?) to try to downcast the segue’s source view controller to a MealViewController instance. You need to downcast because sender.sourceViewController is of type UIViewController, but you need to work with a MealViewController.
         //The operator returns an optional value, which will be nil if the downcast wasn’t possible. If the downcast succeeds, the code assigns the MealViewController instance to the local constant sourceViewController, and checks to see if the meal property on sourceViewController is nil. If the meal property is non-nil, the code assigns the value of that property to the local constant meal and executes the if statement.
-        
         if let sourceViewController = sender.source as? MealViewController, let meal = sourceViewController.meal {
             // Add a new meal.
-            let newIndexPath = IndexPath(row: meals.count, section: 0)
-            meals.append(meal)
-            tableView.insertRows(at: [newIndexPath], with: .automatic)
+            
+            
+            //This code checks whether a row in the table view is selected. If it is, that means a user tapped one of the table views cells to edit a meal. In other words, this if statement gets executed when you are editing an existing meal.
+            if let selectedIndexPath = tableView.indexPathForSelectedRow {
+                
+                // Update an existing meal.  It replaces the old meal object with the new, edited meal object.
+                meals[selectedIndexPath.row] = meal
+                tableView.reloadRows(at: [selectedIndexPath], with: .none)
+            }
+                
+                //The else clause executes when there’s no selected row in the table view, which means a user tapped the Add button to get to the meal detail scene. In other words, this else statement executes when the user adds a new meal.
+            else {
+                // Add a new meal.
+                let newIndexPath = IndexPath(row: meals.count, section: 0)
+                meals.append(meal)
+                tableView.insertRows(at: [newIndexPath], with: .automatic)
+            }
             
         }
     }

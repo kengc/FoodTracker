@@ -36,6 +36,20 @@ class MealViewController: UIViewController, UITextFieldDelegate, UIImagePickerCo
         // Handle the text field’s user input through delegate callbacks.
         nameTextField.delegate = self;
         
+        // Handle the text field’s user input through delegate callbacks.
+        nameTextField.delegate = self
+        
+        
+        //If the meal property is non-nil, this code sets each of the views in MealViewController to display data from the meal property. The meal property will only be non-nil when an existing meal is being edited.
+        // Set up views if editing an existing Meal.
+        if let meal = meal {
+            navigationItem.title = meal.name
+            nameTextField.text   = meal.name
+            photoImageView.image = meal.photo
+            ratingControl.rating = meal.rating
+        }
+
+        
         // Enable the Save button only if the text field has a valid Meal name.
         updateSaveButtonState()
     }
@@ -45,6 +59,22 @@ class MealViewController: UIViewController, UITextFieldDelegate, UIImagePickerCo
     
     
     @IBAction func cancel(_ sender: UIBarButtonItem) {
+        // Depending on style of presentation (modal or push presentation), this view controller needs to be dismissed in two different ways.
+        //This code creates a Boolean value that indicates whether the view controller that presented this scene is of type UINavigationController
+        let isPresentingInAddMealMode = presentingViewController is UINavigationController
+        
+        if isPresentingInAddMealMode {
+            dismiss(animated: true, completion: nil)
+        }
+        //The else block is called if the user is editing an existing meal
+        else if let owningNavigationController = navigationController{
+            owningNavigationController.popViewController(animated: true)
+        }
+            
+            //This else case executes only if the meal detail scene was not presented inside a modal navigation controller (for example, when adding a new meal), and if the meal detail scene was not pushed onto a navigation stack (for example, when editing a meal).
+        else {
+            fatalError("The MealViewController is not inside a navigation controller.")
+        }
         dismiss(animated: true, completion: nil)
     }
     
