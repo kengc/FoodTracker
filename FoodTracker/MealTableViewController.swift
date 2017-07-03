@@ -24,8 +24,19 @@ class MealTableViewController: UITableViewController {
         //in otherwords ADD an edit (delete) button to the top left navi bar
         navigationItem.leftBarButtonItem = editButtonItem
         
+        
+        // Load any saved meals, otherwise load sample data.
+        //If loadMeals() successfully returns an array of Meal objects, this condition is true and the if statement gets executed. If loadMeals() returns nil, there were no meals to load and the if statement doesn’t get executed. This code adds any meals that were successfully loaded to the meals array.
+        if let savedMeals = loadMeals() {
+            meals += savedMeals
+        }
+        else {
+            // Load the sample data.
+            loadSampleMeals()
+        }
+        
         // Load the sample data.
-        loadSampleMeals()
+        //loadSampleMeals()
 
     }
 
@@ -63,6 +74,7 @@ class MealTableViewController: UITableViewController {
         // Fetches the appropriate meal for the data source layout.
         let meal = meals[indexPath.row]
         
+        
         cell.nameLabel.text = meal.name
         cell.photoImageView.image = meal.photo
         cell.ratingControl.rating = meal.rating
@@ -77,10 +89,16 @@ class MealTableViewController: UITableViewController {
             // Delete the row from the data source
             //This code removes the Meal object to be deleted from meals. The line after it, which is part of the template implementation, deletes the corresponding row from the table view.
             meals.remove(at: indexPath.row)
+    
+            //This code saves the meals array whenever a meal is deleted.
+            saveMeals()
+            
             tableView.deleteRows(at: [indexPath], with: .fade)
         } else if editingStyle == .insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
         }
+        
+
     }
     
     // Override to support conditional editing of the table view.
@@ -182,7 +200,9 @@ class MealTableViewController: UITableViewController {
                 meals.append(meal)
                 tableView.insertRows(at: [newIndexPath], with: .automatic)
             }
-            
+            // Save the meals.
+            //This code saves the meals array whenever a new one is added or an existing one is updated.
+            saveMeals()
         }
     }
     
@@ -209,6 +229,22 @@ class MealTableViewController: UITableViewController {
         }
         
         meals += [meal1, meal2, meal3]
+    }
+    
+    private func saveMeals() {
+        //This method attempts to archive the meals array to a specific location, and returns true if it’s successful. It uses the constant Meal.ArchiveURL that you defined in the Meal class to identify where to save the information.
+        let isSuccessfulSave = NSKeyedArchiver.archiveRootObject(meals, toFile: Meal.ArchiveURL.path)
+        if isSuccessfulSave {
+            os_log("Meals successfully saved.", log: OSLog.default, type: .debug)
+        } else {
+            os_log("Failed to save meals...", log: OSLog.default, type: .error)
+        }
+    }
+    
+    private func loadMeals() -> [Meal]? {
+        
+        //This method attempts to unarchive the object stored at the path Meal.ArchiveURL.path and downcast that object to an array of Meal objects. This code uses the as? operator so that it can return nil if the downcast fails. This failure typically happens because an array has not yet been saved. In this case, the unarchiveObject(withFile:) method returns nil. The attempt to downcast nil to [Meal] also fails, itself returning nil.
+        return NSKeyedUnarchiver.unarchiveObject(withFile: Meal.ArchiveURL.path) as? [Meal]
     }
 }
 

@@ -7,14 +7,28 @@
 //
 
 import UIKit
+import os.log
 
-class Meal {
+class Meal: NSObject, NSCoding {
     
     //In Swift, you can represent the name using a String, the photo using a UIImage, and the rating using an Int. Because a meal always has a name and rating but might not have a photo, make the UIImage an optional.
-    
+//MARK: Peroperties
     var name: String
     var photo: UIImage?
     var rating: Int
+    
+    //You mark these constants with the static keyword, which means they belong to the class instead of an instance of the class. Outside of the Meal class, you’ll access the path using the syntax Meal.ArchiveURL.path. There will only ever be one copy of these properties, no matter how many instances of the Meal class you create.
+    static let DocumentsDirectory = FileManager().urls(for: .documentDirectory, in: .userDomainMask).first!
+    static let ArchiveURL = DocumentsDirectory.appendingPathComponent("meals")
+    
+//MARK: Types
+    
+    struct PropertyKey {
+        //Each constant corresponds to one of the three properties of Meal
+        static let name = "name"
+        static let photo = "photo"
+        static let rating = "rating"
+    }
     
 //MARK: Initialization
     
@@ -37,4 +51,36 @@ class Meal {
         self.photo = photo
         self.rating = rating
     }
+    
+//MARK: NSCoding
+    func encode(with aCoder: NSCoder) {
+        //Each method encodes data of the given type. In the code shown above, the first two lines pass a String argument, while the third line passes an Int. These lines encode the value of each property on the Meal class and store them with their corresponding key.
+        aCoder.encode(name, forKey: PropertyKey.name)
+        aCoder.encode(photo, forKey: PropertyKey.photo)
+        aCoder.encode(rating, forKey: PropertyKey.rating)
+    }
+    
+    //The required modifier means this initializer must be implemented on every subclass, if the subclass defines its own initializers.
+    //The convenience modifier means that this is a secondary initializer, and that it must call a designated initializer from the same class.
+    //The question mark (?) means that this is a failable initializer that might return nil.
+    required convenience init?(coder aDecoder: NSCoder) {
+        // The name is required. If we cannot decode a name string, the initializer should fail.
+        //The decodeObject(forKey:) method decodes encoded information.
+        //The return value of decodeObjectForKey(_:) is an Any? optional. The guard statement both unwraps the optional and downcasts the enclosed type to a String, before assigning it to the name constant. If either of these operations fail, the entire initializer fails.
+        guard let name = aDecoder.decodeObject(forKey: PropertyKey.name) as? String else {
+            os_log("Unable to decode the name for a Meal object.", log: OSLog.default, type: .debug)
+            return nil
+        }
+        // Because photo is an optional property of Meal, just use conditional cast.
+        //You downcast the value returned by decodeObject(forKey:) as a UIImage, and assign it to the photo constant. If the downcast fails, it assigns nil to the photo property. There is no need for a guard statement here, because the photo property is itself an optional.
+        let photo = aDecoder.decodeObject(forKey: PropertyKey.photo) as? UIImage
+        
+        //The decodeIntegerForKey(_:) method unarchives an integer. Because the return value of decodeIntegerForKey is Int, there’s no need to downcast the decoded value and there is no optional to unwrap.
+        let rating = aDecoder.decodeInteger(forKey: PropertyKey.rating)
+        
+        // Must call designated initializer.
+        //As a convenience initializer, this initializer is required to call one of its class’s designated initializers before completing.
+        self.init(name: name, photo: photo, rating: rating)
+    }
+    
 }
